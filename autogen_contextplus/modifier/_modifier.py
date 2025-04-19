@@ -6,7 +6,7 @@ from typing import Any, List, Sequence
 from pydantic import BaseModel
 from typing_extensions import Self
 
-from autogen_core import Component
+from autogen_core import Component, ComponentModel
 from autogen_core._function_utils import (
     get_typed_signature,
 )
@@ -17,18 +17,18 @@ from ..base import BaseModifier, BaseModifierAgent
 from ..base.types import ModifierFunction
 
 
-class ModifiierConfig(BaseModel):
+class ModifierConfig(BaseModel):
     """Configuration for a summary function."""
 
     source_code: str | None = None
-    agent: BaseModifierAgent | None = None
+    agent: ComponentModel | None = None
     name: str
     global_imports: Sequence[Import]
 
 
-class Modifiier(BaseModifier, Component[ModifiierConfig]):
-    component_provider_override = "autogen_core.model_context.conditions.SummaryFunction"
-    component_config_schema = ModifiierConfig
+class Modifier(BaseModifier, Component[ModifierConfig]):
+    component_provider_override = "autogen_contextplus.modifier.Modifiier"
+    component_config_schema = ModifierConfig
 
     def __init__(
         self,
@@ -61,22 +61,24 @@ class Modifiier(BaseModifier, Component[ModifiierConfig]):
             result = await self._agent.run(task=messages, original_task=non_summary_messages)
         return result
 
-    def _to_config(self) -> ModifiierConfig:
-        if self._func is None:
-            return ModifiierConfig(
+    def _to_config(self) -> ModifierConfig:
+        if self._func is not None and self._agent is not None:
+            raise ValueError("Only one of a function or an agent can be provided.")
+        if self._func is not None:
+            return ModifierConfig(
                 source_code=dedent(to_code(self._func)),
                 global_imports=self._global_imports,
                 name=self.name,
             )
         if self._agent is not None:
-            return ModifiierConfig(
-                agent=self._agent,
+            return ModifierConfig(
+                agent=self._agent.dump_component(),
                 global_imports=self._global_imports,
                 name=self.name,
             )
 
     @classmethod
-    def _from_config(cls, config: ModifiierConfig) -> Self:
+    def _from_config(cls, config: ModifierConfig) -> Self:
         exec_globals: dict[str, Any] = {}
 
         # Execute imports first
@@ -116,4 +118,4 @@ class Modifiier(BaseModifier, Component[ModifiierConfig]):
 
             return cls(func=func, name=config.name, global_imports=config.global_imports)
         if config.agent is not None:
-            return cls(agent=config.agent, name=config.name, global_imports=config.global_imports)
+            return cls(agent=BaseModifierAgent.load_component(config.agent), name=config.name, global_imports=config.global_imports)

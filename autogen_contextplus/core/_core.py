@@ -9,7 +9,7 @@ from autogen_core.tools import BaseTool
 from autogen_core.model_context import ChatCompletionContext
 from ..base import ContextPlusCondition, BaseModifier
 from ..base.types import ModifierFunction
-from ..modifier import Modifiier
+from ..modifier import Modifier
 
 
 class ContextPlusChatCompletionContextConfig(BaseModel):
@@ -72,11 +72,11 @@ class ContextPlusChatCompletionContext(ChatCompletionContext, Component[ContextP
     """
 
     component_config_schema = ContextPlusChatCompletionContextConfig
-    component_provider_override = "autogen_core.model_context.SummarizedChatCompletionContext" # todo
+    component_provider_override = "autogen_contextplus.ContextPlusChatCompletionContext"
 
     def __init__(
         self,
-        mofifier_func: ModifierFunction | Modifiier,
+        mofifier_func: ModifierFunction | Modifier,
         modifier_condition: ContextPlusCondition,
         initial_messages: List[LLMMessage] | None = None,
         non_modified_messages: List[LLMMessage] | None = None,
@@ -89,14 +89,14 @@ class ContextPlusChatCompletionContext(ChatCompletionContext, Component[ContextP
 
         self._non_modified_messages.extend(self._messages)
 
-        self._mofifier_func: Modifiier
+        self._mofifier_func: Modifier
         if isinstance(mofifier_func, BaseTool):
             # If the summarizing function is a tool, use it directly.
             self._mofifier_func = mofifier_func
         elif callable(mofifier_func):
-            self._mofifier_func = Modifiier(func=mofifier_func)
+            self._mofifier_func = Modifier(func=mofifier_func)
         else:
-            raise ValueError("mofifier_func must be a callable or a Modifiier.")
+            raise ValueError("mofifier_func must be a callable or a Modifier.")
         self._modifier_condition = modifier_condition
 
     async def add_message(self, message: LLMMessage) -> None:

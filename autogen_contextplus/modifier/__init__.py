@@ -1,8 +1,8 @@
 from ._modifier import (
-    Modifiier,
+    Modifier,
 )
 
 
 __all__ = [
-    "Modifiier",
+    "Modifier",
 ]
