@@ -10,7 +10,7 @@ from autogen_core import Component, ComponentModel
 from autogen_core._function_utils import (
     get_typed_signature,
 )
-from autogen_core.code_executor import Import
+from autogen_core.code_executor import Import, ImportFromModule
 from autogen_core.code_executor._func_with_reqs import import_to_str, to_code
 from autogen_core.models import LLMMessage
 from ..base import BaseModifier, BaseModifierAgent
@@ -18,7 +18,7 @@ from ..base.types import ModifierFunction
 
 
 class ModifierConfig(BaseModel):
-    """Configuration for a summary function."""
+    """Configuration for a modifier function."""
 
     source_code: str | None = None
     agent: ComponentModel | None = None
@@ -27,7 +27,7 @@ class ModifierConfig(BaseModel):
 
 
 class Modifier(BaseModifier, Component[ModifierConfig]):
-    component_provider_override = "autogen_contextplus.modifier.Modifiier"
+    component_provider_override = "autogen_contextplus.modifier.Modifier"
     component_config_schema = ModifierConfig
 
     def __init__(
@@ -41,6 +41,18 @@ class Modifier(BaseModifier, Component[ModifierConfig]):
         self._func = func
         self._agent = agent
         self._global_imports = global_imports
+        self._global_imports.append(
+            ImportFromModule(
+                module="typing",
+                imports=("List", "Optional", "Callable", "Any", "Sequence"),
+            )
+        )
+        self._global_imports.append(
+            ImportFromModule(
+                module="autogen_core.models",
+                imports=("LLMMessage",),
+            )
+        )
         if func is not None:
             self._signature = get_typed_signature(func)
             func_name = name or func.func.__name__ if isinstance(func, functools.partial) else name or func.__name__
@@ -54,11 +66,11 @@ class Modifier(BaseModifier, Component[ModifierConfig]):
             raise ValueError("Only one of a function or an agent can be provided.")
         super().__init__(func_name)
 
-    async def run(self, messages: List[LLMMessage], non_summary_messages: List[LLMMessage]) -> List[LLMMessage]:
+    async def run(self, messages: List[LLMMessage], non_modified_messages: List[LLMMessage]) -> List[LLMMessage]:
         if self._func is not None:
-            result = self._func(messages, non_summary_messages)
+            result = self._func(messages, non_modified_messages)
         if self._agent is not None:
-            result = await self._agent.run(task=messages, original_task=non_summary_messages)
+            result = await self._agent.run(task=messages, original_task=non_modified_messages)
         return result
 
     def _to_config(self) -> ModifierConfig:

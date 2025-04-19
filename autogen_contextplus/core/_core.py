@@ -13,7 +13,7 @@ from ..modifier import Modifier
 
 
 class ContextPlusChatCompletionContextConfig(BaseModel):
-    mofifier_func: ComponentModel
+    modifier_func: ComponentModel
     modifier_condition: ComponentModel
     initial_messages: List[LLMMessage] | None = None
     non_modified_messages: List[LLMMessage] | None = None
@@ -76,7 +76,7 @@ class ContextPlusChatCompletionContext(ChatCompletionContext, Component[ContextP
 
     def __init__(
         self,
-        mofifier_func: ModifierFunction | Modifier,
+        modifier_func: ModifierFunction | Modifier,
         modifier_condition: ContextPlusCondition,
         initial_messages: List[LLMMessage] | None = None,
         non_modified_messages: List[LLMMessage] | None = None,
@@ -89,14 +89,14 @@ class ContextPlusChatCompletionContext(ChatCompletionContext, Component[ContextP
 
         self._non_modified_messages.extend(self._messages)
 
-        self._mofifier_func: Modifier
-        if isinstance(mofifier_func, BaseTool):
+        self._modifier_func: Modifier
+        if isinstance(modifier_func, Modifier):
             # If the summarizing function is a tool, use it directly.
-            self._mofifier_func = mofifier_func
-        elif callable(mofifier_func):
-            self._mofifier_func = Modifier(func=mofifier_func)
+            self._modifier_func = modifier_func
+        elif callable(modifier_func):
+            self._modifier_func = Modifier(func=modifier_func)
         else:
-            raise ValueError("mofifier_func must be a callable or a Modifier.")
+            raise ValueError("modifier_func must be a callable or a Modifier.")
         self._modifier_condition = modifier_condition
 
     async def add_message(self, message: LLMMessage) -> None:
@@ -112,25 +112,32 @@ class ContextPlusChatCompletionContext(ChatCompletionContext, Component[ContextP
             await self._modifier_condition.reset()
 
     async def get_messages(self) -> List[LLMMessage]:
+        """Get the messages in the context."""
         return self._messages
+    
+    async def clear(self) -> None:
+        """Clear the context."""
+        await super().clear()
+        self._non_modified_messages = []
 
     async def modifiy(self) -> None:
-        """Summarize the messages in the context using the summarizing function."""
-        summarized_message = await self._summarizing_func.run(self._messages, self._non_summarized_messages)
-        self._messages = summarized_message
+        """Modifiy the messages in the context using the summarizing function."""
+        modified_message = await self._modifier_func.run(self._messages, self._non_modified_messages)
+        self._messages = modified_message
 
     def _to_config(self) -> ContextPlusChatCompletionContextConfig:
         return ContextPlusChatCompletionContextConfig(
-            summarizing_func=self._summarizing_func.dump_component(),
-            summarizing_condition=self._summarizing_condition.dump_component(),
+            modifier_func=self._modifier_func.dump_component(),
+            modifier_condition=self._modifier_condition.dump_component(),
             initial_messages=self._initial_messages,
         )
 
     @classmethod
     def _from_config(cls, config: ContextPlusChatCompletionContextConfig) -> Self:
+        """Create a summarized chat completion context from a config."""
         return cls(
-            summarizing_func=Modifiier.load_component(config.summarizing_func),
-            summarizing_condition=ContextPlusChatCompletionContext.load_component(config.summarizing_condition),
+            modifier_func=Modifier.load_component(config.modifier_func),
+            modifier_condition=ContextPlusCondition.load_component(config.modifier_condition),
             initial_messages=config.initial_messages,
-            non_summarized_messages=config.non_summarized_messages,
+            non_modified_messages=config.non_modified_messages,
         )

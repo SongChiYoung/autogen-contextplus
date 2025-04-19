@@ -33,6 +33,7 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
+  "autogen_ext>=0.5.1",
   "pytest",
   "pytest-asyncio",
   "pytest-cov",
