@@ -55,6 +55,7 @@ dev = [
   "chainlit",
   "streamlit",
   "playwright",
+  "build", 
 ]
 
 [project.urls]
