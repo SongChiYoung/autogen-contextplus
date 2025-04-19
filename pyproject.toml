@@ -85,7 +85,7 @@ disallow_untyped_decorators = true
 disallow_any_unimported = true
 
 [tool.pyright]
-include = ["autogen_contextplus", "tests"]
+include = ["autogen_contextplus", "tests", "examples"]
 typeCheckingMode = "strict"
 reportUnnecessaryIsInstance = false
 reportMissingTypeStubs = false
@@ -106,10 +106,10 @@ ignore = ["F401", "E501"]
 "unittest".msg = "Use `pytest` instead."
 
 [tool.poe.tasks]
-check = { sequence = ["pyright", "test"], help = "Run pyright then pytest" }
+check = { sequence = ["pyright", "mypy", "test"], help = "Run pyright then pytest" }
 pyright = { shell = "pyright" }
-mypy = { shell = "mypy autogen_contextplus tests", help = "Run mypy type checks" }
-test = { shell = "PYTHONPATH=autogen_contextplus pytest" }
+mypy = { shell = "mypy autogen_contextplus tests examples", help = "Run mypy type checks" }
+test = { shell = "pytest" }
 
 [tool.poe]
 envfile = ".env"

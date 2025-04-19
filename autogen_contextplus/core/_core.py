@@ -5,9 +5,8 @@ from typing_extensions import Self
 
 from autogen_core import ComponentModel, Component
 from autogen_core.models import LLMMessage
-from autogen_core.tools import BaseTool
 from autogen_core.model_context import ChatCompletionContext
-from ..base import ContextPlusCondition, BaseModifier
+from ..base import ContextPlusCondition
 from ..base.types import ModifierFunction
 from ..modifier import Modifier
 

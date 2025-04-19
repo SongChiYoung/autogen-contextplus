@@ -1,7 +1,7 @@
 import functools
 import warnings
 from textwrap import dedent
-from typing import Any, List, Sequence
+from typing import Any, List
 
 from pydantic import BaseModel
 from typing_extensions import Self
@@ -23,7 +23,7 @@ class ModifierConfig(BaseModel):
     source_code: str | None = None
     agent: ComponentModel | None = None
     name: str
-    global_imports: Sequence[Import]
+    global_imports: List[Import]
 
 
 class Modifier(BaseModifier, Component[ModifierConfig]):
@@ -35,7 +35,7 @@ class Modifier(BaseModifier, Component[ModifierConfig]):
         func: ModifierFunction | None = None,
         agent: BaseModifierAgent | None = None,
         name: str | None = None,
-        global_imports: Sequence[Import] = [],
+        global_imports: List[Import] = [],
         strict: bool = False,
     ) -> None:
         self._func = func
@@ -53,6 +53,7 @@ class Modifier(BaseModifier, Component[ModifierConfig]):
                 imports=("LLMMessage",),
             )
         )
+        func_name = ""
         if func is not None:
             self._signature = get_typed_signature(func)
             func_name = name or func.func.__name__ if isinstance(func, functools.partial) else name or func.__name__
@@ -64,30 +65,34 @@ class Modifier(BaseModifier, Component[ModifierConfig]):
             raise ValueError("Either a function or an agent must be provided.")
         if func is not None and agent is not None:
             raise ValueError("Only one of a function or an agent can be provided.")
-        super().__init__(func_name)
+        super().__init__(name=func_name)
 
     async def run(self, messages: List[LLMMessage], non_modified_messages: List[LLMMessage]) -> List[LLMMessage]:
         if self._func is not None:
             result = self._func(messages, non_modified_messages)
         if self._agent is not None:
-            result = await self._agent.run(task=messages, original_task=non_modified_messages)
+            result = self._agent.run(task=messages, original_task=non_modified_messages)
+        else:
+            result = messages
         return result
 
     def _to_config(self) -> ModifierConfig:
         if self._func is not None and self._agent is not None:
             raise ValueError("Only one of a function or an agent can be provided.")
-        if self._func is not None:
+        elif self._func is not None:
             return ModifierConfig(
                 source_code=dedent(to_code(self._func)),
                 global_imports=self._global_imports,
                 name=self.name,
             )
-        if self._agent is not None:
+        elif self._agent is not None:
             return ModifierConfig(
                 agent=self._agent.dump_component(),
                 global_imports=self._global_imports,
                 name=self.name,
             )
+        else:
+            raise ValueError("Either a function or an agent must be provided.")
 
     @classmethod
     def _from_config(cls, config: ModifierConfig) -> Self:
@@ -131,3 +136,5 @@ class Modifier(BaseModifier, Component[ModifierConfig]):
             return cls(func=func, name=config.name, global_imports=config.global_imports)
         if config.agent is not None:
             return cls(agent=BaseModifierAgent.load_component(config.agent), name=config.name, global_imports=config.global_imports)
+        
+        raise ValueError("Either a function or an agent must be provided.")

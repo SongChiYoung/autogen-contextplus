@@ -21,7 +21,7 @@ class BaseModifier(ABC, ComponentBase[BaseModel]):
         return self._name
 
     @abstractmethod
-    def run(self, messages: List[LLMMessage], non_summary_messages: List[LLMMessage]) -> List[LLMMessage]: ...
+    async def run(self, messages: List[LLMMessage], non_modified_messages: List[LLMMessage]) -> List[LLMMessage]: ...
 
     def save_state_json(self) -> Mapping[str, Any]:
         return {}
