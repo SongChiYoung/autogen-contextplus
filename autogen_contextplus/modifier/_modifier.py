@@ -70,7 +70,7 @@ class Modifier(BaseModifier, Component[ModifierConfig]):
     async def run(self, messages: List[LLMMessage], non_modified_messages: List[LLMMessage]) -> List[LLMMessage]:
         if self._func is not None:
             result = self._func(messages, non_modified_messages)
-        if self._agent is not None:
+        elif self._agent is not None:
             result = self._agent.run(task=messages, original_task=non_modified_messages)
         else:
             result = messages
