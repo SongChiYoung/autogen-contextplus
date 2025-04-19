@@ -6,7 +6,7 @@ from autogen_agentchat.agents import AssistantAgent
 from autogen_core import CancellationToken 
 
 from autogen_contextplus.conditions import (
-    MaxContextPlus
+    MaxMessageCondition,
 )
 from autogen_contextplus import (
     ContextPlusChatCompletionContext
@@ -37,7 +37,7 @@ async def main()-> None:
     
     context = ContextPlusChatCompletionContext(
         modifier_func = buffered_summary,
-        modifier_condition = MaxContextPlus(max_messages=2)
+        modifier_condition = MaxMessageCondition(max_messages=2)
     )
     agent = AssistantAgent(
         "helper",

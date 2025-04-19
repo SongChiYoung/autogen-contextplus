@@ -11,15 +11,15 @@ from ..base import ContextPlusCondition, ContextPlusException
 from ..base.types import BaseContextMessageTypes, ContextMessage, LLMMessageInstance, TriggerMessage
 
 
-class TriggerContextPlusConfig(BaseModel):
+class TriggerMessageConditionConfig(BaseModel):
     pass
 
 
-class TriggerContextPlus(ContextPlusCondition, Component[TriggerContextPlusConfig]):
+class TriggerMessageCondition(ContextPlusCondition, Component[TriggerMessageConditionConfig]):
     """Trigger the conversation if a TriggerMessage is received."""
 
-    component_config_schema = TriggerContextPlusConfig
-    component_provider_override = "autogen_contextplus.condidions.TriggerContextPlus"
+    component_config_schema = TriggerMessageConditionConfig
+    component_provider_override = "autogen_contextplus.condidions.TriggerMessageCondition"
 
     def __init__(self) -> None:
         self._triggered = False
@@ -34,34 +34,34 @@ class TriggerContextPlus(ContextPlusCondition, Component[TriggerContextPlusConfi
         for message in messages:
             if isinstance(message, TriggerMessage):
                 self._triggered = True
-                return TriggerMessage(content="Triggered message received", source="TriggerContextPlus")
+                return TriggerMessage(content="Triggered message received", source="TriggerMessageCondition")
         return None
 
     async def reset(self) -> None:
         self._triggered = False
 
-    def _to_config(self) -> TriggerContextPlusConfig:
-        return TriggerContextPlusConfig()
+    def _to_config(self) -> TriggerMessageConditionConfig:
+        return TriggerMessageConditionConfig()
 
     @classmethod
-    def _from_config(cls, config: TriggerContextPlusConfig) -> Self:
+    def _from_config(cls, config: TriggerMessageConditionConfig) -> Self:
         return cls()
 
 
-class MaxContextPlusConfig(BaseModel):
+class MaxMessageConditionConfig(BaseModel):
     max_messages: int
     # TODO : include_agent_event: bool = False
 
 
-class MaxContextPlus(ContextPlusCondition, Component[MaxContextPlusConfig]):
+class MaxMessageCondition(ContextPlusCondition, Component[MaxMessageConditionConfig]):
     """Trigger the conversation after a maximum number of messages have been exchanged.
 
     Args:
         max_messages: The maximum number of messages allowed in the conversation.
     """
 
-    component_config_schema = MaxContextPlusConfig
-    component_provider_override = "autogen_contextplus.conditions.MaxContextPlus"
+    component_config_schema = MaxMessageConditionConfig
+    component_provider_override = "autogen_contextplus.conditions.MaxMessageCondition"
 
     def __init__(self, max_messages: int) -> None:
         self._max_messages = max_messages
@@ -85,20 +85,20 @@ class MaxContextPlus(ContextPlusCondition, Component[MaxContextPlusConfig]):
     async def reset(self) -> None:
         self._message_count = 0
 
-    def _to_config(self) -> MaxContextPlusConfig:
-        return MaxContextPlusConfig(max_messages=self._max_messages)
+    def _to_config(self) -> MaxMessageConditionConfig:
+        return MaxMessageConditionConfig(max_messages=self._max_messages)
 
     @classmethod
-    def _from_config(cls, config: MaxContextPlusConfig) -> Self:
+    def _from_config(cls, config: MaxMessageConditionConfig) -> Self:
         return cls(max_messages=config.max_messages)
 
 
-class TextMentionContextPlusConfig(BaseModel):
+class TextMentionConditionConfig(BaseModel):
     text: str
     sources: Sequence[str] | None = None
 
 
-class TextMentionContextPlus(ContextPlusCondition, Component[TextMentionContextPlusConfig]):
+class TextMentionCondition(ContextPlusCondition, Component[TextMentionConditionConfig]):
     """Trigger the conversation if a specific text is mentioned.
 
 
@@ -107,8 +107,8 @@ class TextMentionContextPlus(ContextPlusCondition, Component[TextMentionContextP
         sources: Check only messages of the specified agents for the text to look for.
     """
 
-    component_config_schema = TextMentionContextPlusConfig
-    component_provider_override = "autogen_contextplus.conditions.TextMentionContextPlus"
+    component_config_schema = TextMentionConditionConfig
+    component_provider_override = "autogen_contextplus.conditions.TextMentionCondition"
 
     def __init__(self, text: str, sources: Sequence[str] | None = None) -> None:
         self._trigger_text = text
@@ -130,35 +130,35 @@ class TextMentionContextPlus(ContextPlusCondition, Component[TextMentionContextP
             if self._trigger_text in content:
                 self._triggered = True
                 return TriggerMessage(
-                    content=f"Text '{self._trigger_text}' mentioned", source="TextMentionContextPlus"
+                    content=f"Text '{self._trigger_text}' mentioned", source="TextMentionCondition"
                 )
         return None
 
     async def reset(self) -> None:
         self._triggered = False
 
-    def _to_config(self) -> TextMentionContextPlusConfig:
-        return TextMentionContextPlusConfig(
+    def _to_config(self) -> TextMentionConditionConfig:
+        return TextMentionConditionConfig(
             text=self._trigger_text,
             sources=self._sources,
         )
 
     @classmethod
-    def _from_config(cls, config: TextMentionContextPlusConfig) -> Self:
+    def _from_config(cls, config: TextMentionConditionConfig) -> Self:
         return cls(
             text=config.text,
             sources=config.sources,
         )
 
 
-class TokenUsageContextPlusConfig(BaseModel):
+class TokenUsageConditionConfig(BaseModel):
     model_client: ComponentModel
     token_limit: int | None = None
     tool_schema: List[ToolSchema] | None = None
     initial_messages: List[LLMMessage] | None = None
 
 
-class TokenUsageContextPlus(ContextPlusCondition, Component[TokenUsageContextPlusConfig]):
+class TokenUsageCondition(ContextPlusCondition, Component[TokenUsageConditionConfig]):
     """(Experimental) A token based chat completion context maintains a view of the context up to a token limit.
 
     .. note::
@@ -178,8 +178,8 @@ class TokenUsageContextPlus(ContextPlusCondition, Component[TokenUsageContextPlu
 
     """
 
-    component_config_schema = TokenUsageContextPlusConfig
-    component_provider_override = "autogen_contextplus.conditions.TokenUsageContextPlus"
+    component_config_schema = TokenUsageConditionConfig
+    component_provider_override = "autogen_contextplus.conditions.TokenUsageCondition"
 
     def __init__(
         self,
@@ -228,15 +228,15 @@ class TokenUsageContextPlus(ContextPlusCondition, Component[TokenUsageContextPlu
 
         if self.triggered:
             content = f"Token usage limit reached, total token count: {self._total_token}."
-            return TriggerMessage(content=content, source="TokenUsageContextPlus")
+            return TriggerMessage(content=content, source="TokenUsageCondition")
         return None
 
     async def reset(self) -> None:
         self._total_token = 0
         self._initial_messages = []
 
-    def _to_config(self) -> TokenUsageContextPlusConfig:
-        return TokenUsageContextPlusConfig(
+    def _to_config(self) -> TokenUsageConditionConfig:
+        return TokenUsageConditionConfig(
             model_client=self._model_client.dump_component(),
             token_limit=self._token_limit,
             tool_schema=self._tool_schema,
@@ -244,7 +244,7 @@ class TokenUsageContextPlus(ContextPlusCondition, Component[TokenUsageContextPlu
         )
 
     @classmethod
-    def _from_config(cls, config: TokenUsageContextPlusConfig) -> Self:
+    def _from_config(cls, config: TokenUsageConditionConfig) -> Self:
         return cls(
             model_client=ChatCompletionClient.load_component(config.model_client),
             token_limit=config.token_limit,
@@ -253,19 +253,19 @@ class TokenUsageContextPlus(ContextPlusCondition, Component[TokenUsageContextPlu
         )
 
 
-class TimeoutContextPlusConfig(BaseModel):
+class TimeoutConditionConfig(BaseModel):
     timeout_seconds: float
 
 
-class TimeoutContextPlus(ContextPlusCondition, Component[TimeoutContextPlusConfig]):
+class TimeoutCondition(ContextPlusCondition, Component[TimeoutConditionConfig]):
     """Trigger the conversation after a specified duration has passed.
 
     Args:
         timeout_seconds: The maximum duration in seconds before triggering the conversation.
     """
 
-    component_config_schema = TimeoutContextPlusConfig
-    component_provider_override = "autogen_contextplus.conditions.TimeoutContextPlus"
+    component_config_schema = TimeoutConditionConfig
+    component_provider_override = "autogen_contextplus.conditions.TimeoutCondition"
 
     def __init__(self, timeout_seconds: float) -> None:
         self._timeout_seconds = timeout_seconds
@@ -283,7 +283,7 @@ class TimeoutContextPlus(ContextPlusCondition, Component[TimeoutContextPlusConfi
         if (time.monotonic() - self._start_time) >= self._timeout_seconds:
             self._triggered = True
             return TriggerMessage(
-                content=f"Timeout of {self._timeout_seconds} seconds reached", source="TimeoutContextPlus"
+                content=f"Timeout of {self._timeout_seconds} seconds reached", source="TimeoutCondition"
             )
         return None
 
@@ -291,35 +291,35 @@ class TimeoutContextPlus(ContextPlusCondition, Component[TimeoutContextPlusConfi
         self._start_time = time.monotonic()
         self._triggered = False
 
-    def _to_config(self) -> TimeoutContextPlusConfig:
-        return TimeoutContextPlusConfig(timeout_seconds=self._timeout_seconds)
+    def _to_config(self) -> TimeoutConditionConfig:
+        return TimeoutConditionConfig(timeout_seconds=self._timeout_seconds)
 
     @classmethod
-    def _from_config(cls, config: TimeoutContextPlusConfig) -> Self:
+    def _from_config(cls, config: TimeoutConditionConfig) -> Self:
         return cls(timeout_seconds=config.timeout_seconds)
 
 
-class ExternalContextPlusConfig(BaseModel):
+class ExternalConditionConfig(BaseModel):
     pass
 
 
-class ExternalContextPlus(ContextPlusCondition, Component[ExternalContextPlusConfig]):
+class ExternalCondition(ContextPlusCondition, Component[ExternalConditionConfig]):
     """A Trigger condition that is externally controlled
     by calling the :meth:`set` method.
 
     Example:
 
     .. code-block:: python
-        from autogen_contextplus.conditions import ExternalContextPlus
+        from autogen_contextplus.conditions import ExternalCondition
 
-        trigger_condition = ExternalContextPlus()
+        trigger_condition = ExternalCondition()
         trigger_condition.set()
         # Trigger condition is now set to True.
 
     """
 
-    component_config_schema = ExternalContextPlusConfig
-    component_provider_override = "autogen_contextplus.conditions.ExternalContextPlus"
+    component_config_schema = ExternalConditionConfig
+    component_provider_override = "autogen_contextplus.conditions.ExternalCondition"
 
     def __init__(self) -> None:
         self._triggered = False
@@ -344,26 +344,26 @@ class ExternalContextPlus(ContextPlusCondition, Component[ExternalContextPlusCon
             raise ContextPlusException("Trigger condition has already been reached")
         if self._setted:
             self._triggered = True
-            return TriggerMessage(content="External trigger requested", source="ExternalContextPlus")
+            return TriggerMessage(content="External trigger requested", source="ExternalCondition")
         return None
 
     async def reset(self) -> None:
         self._triggered = False
         self._setted = False
 
-    def _to_config(self) -> ExternalContextPlusConfig:
-        return ExternalContextPlusConfig()
+    def _to_config(self) -> ExternalConditionConfig:
+        return ExternalConditionConfig()
 
     @classmethod
-    def _from_config(cls, config: ExternalContextPlusConfig) -> Self:
+    def _from_config(cls, config: ExternalConditionConfig) -> Self:
         return cls()
 
 
-class SourceMatchContextPlusConfig(BaseModel):
+class SourceMatchConditionConfig(BaseModel):
     sources: List[str]
 
 
-class SourceMatchContextPlus(ContextPlusCondition, Component[SourceMatchContextPlusConfig]):
+class SourceMatchCondition(ContextPlusCondition, Component[SourceMatchConditionConfig]):
     """Trigger the conversation after a specific source responds.
 
     Args:
@@ -373,8 +373,8 @@ class SourceMatchContextPlus(ContextPlusCondition, Component[SourceMatchContextP
         ContextPlusException: If the trigger condition has already been reached.
     """
 
-    component_config_schema = SourceMatchContextPlusConfig
-    component_provider_override = "autogen_contextplus.conditions.SourceMatchContextPlus"
+    component_config_schema = SourceMatchConditionConfig
+    component_provider_override = "autogen_contextplus.conditions.SourceMatchCondition"
 
     def __init__(self, sources: List[str]) -> None:
         self._sources = sources
@@ -395,28 +395,28 @@ class SourceMatchContextPlus(ContextPlusCondition, Component[SourceMatchContextP
         for message in _messages:
             if message.source in self._sources:
                 self._triggered = True
-                return TriggerMessage(content=f"'{message.source}' answered", source="SourceMatchContextPlus")
+                return TriggerMessage(content=f"'{message.source}' answered", source="SourceMatchCondition")
         return None
 
     async def reset(self) -> None:
         self._triggered = False
 
-    def _to_config(self) -> SourceMatchContextPlusConfig:
-        return SourceMatchContextPlusConfig(sources=self._sources)
+    def _to_config(self) -> SourceMatchConditionConfig:
+        return SourceMatchConditionConfig(sources=self._sources)
 
     @classmethod
-    def _from_config(cls, config: SourceMatchContextPlusConfig) -> Self:
+    def _from_config(cls, config: SourceMatchConditionConfig) -> Self:
         return cls(sources=config.sources)
 
 
-class TextMessageContextPlusConfig(BaseModel):
-    """Configuration for the TextMessageContextPlus trigger condition."""
+class TextMessageConditionConfig(BaseModel):
+    """Configuration for the TextMessageCondition trigger condition."""
 
     source: str | None = None
     """The source of the text message to trigger the conversation."""
 
 
-class TextMessageContextPlus(ContextPlusCondition, Component[TextMessageContextPlusConfig]):
+class TextMessageCondition(ContextPlusCondition, Component[TextMessageConditionConfig]):
     """Trigger the conversation if a :class:`~autogen_core.models.LLMMessage` and it's content type is `str` is received.
 
     This trigger condition checks for LLMMessage instances in the message sequence. When a LLMMessage is found,
@@ -429,8 +429,8 @@ class TextMessageContextPlus(ContextPlusCondition, Component[TextMessageContextP
             Defaults to None.
     """
 
-    component_config_schema = TextMessageContextPlusConfig
-    component_provider_override = "autogen_contextplus.conditions.TextMessageContextPlus"
+    component_config_schema = TextMessageConditionConfig
+    component_provider_override = "autogen_contextplus.conditions.TextMessageCondition"
 
     def __init__(self, source: str | None = None) -> None:
         self._triggered = False
@@ -451,28 +451,28 @@ class TextMessageContextPlus(ContextPlusCondition, Component[TextMessageContextP
             ):
                 self._triggered = True
                 return TriggerMessage(
-                    content=f"Text message received from '{message.source}'", source="TextMessageContextPlus"
+                    content=f"Text message received from '{message.source}'", source="TextMessageCondition"
                 )
         return None
 
     async def reset(self) -> None:
         self._triggered = False
 
-    def _to_config(self) -> TextMessageContextPlusConfig:
-        return TextMessageContextPlusConfig(source=self._source)
+    def _to_config(self) -> TextMessageConditionConfig:
+        return TextMessageConditionConfig(source=self._source)
 
     @classmethod
-    def _from_config(cls, config: TextMessageContextPlusConfig) -> Self:
+    def _from_config(cls, config: TextMessageConditionConfig) -> Self:
         return cls(source=config.source)
 
 
-class FunctionCallContextPlusConfig(BaseModel):
-    """Configuration for the :class:`FunctionCallContextPlus` trigger condition."""
+class FunctionCallConditionConfig(BaseModel):
+    """Configuration for the :class:`FunctionCallCondition` trigger condition."""
 
     function_name: str
 
 
-class FunctionCallContextPlus(ContextPlusCondition, Component[FunctionCallContextPlusConfig]):
+class FunctionCallCondition(ContextPlusCondition, Component[FunctionCallConditionConfig]):
     """Trigger the conversation if a :class:`~autogen_core.models.FunctionExecutionResult`
     with a specific name was received.
 
@@ -483,8 +483,8 @@ class FunctionCallContextPlus(ContextPlusCondition, Component[FunctionCallContex
         ContextPlusException: If the trigger condition has already been reached.
     """
 
-    component_config_schema = FunctionCallContextPlusConfig
-    component_provider_override = "autogen_contextplus.conditions.FunctionCallContextPlus"
+    component_config_schema = FunctionCallConditionConfig
+    component_provider_override = "autogen_contextplus.conditions.FunctionCallCondition"
 
     def __init__(self, function_name: str) -> None:
         self._triggered = False
@@ -504,20 +504,20 @@ class FunctionCallContextPlus(ContextPlusCondition, Component[FunctionCallContex
                         self._triggered = True
                         return TriggerMessage(
                             content=f"Function '{self._function_name}' was executed.",
-                            source="FunctionCallContextPlus",
+                            source="FunctionCallCondition",
                         )
         return None
 
     async def reset(self) -> None:
         self._triggered = False
 
-    def _to_config(self) -> FunctionCallContextPlusConfig:
-        return FunctionCallContextPlusConfig(
+    def _to_config(self) -> FunctionCallConditionConfig:
+        return FunctionCallConditionConfig(
             function_name=self._function_name,
         )
 
     @classmethod
-    def _from_config(cls, config: FunctionCallContextPlusConfig) -> Self:
+    def _from_config(cls, config: FunctionCallConditionConfig) -> Self:
         return cls(
             function_name=config.function_name,
         )
