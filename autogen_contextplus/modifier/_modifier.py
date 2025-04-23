@@ -7,20 +7,22 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from autogen_core import Component, ComponentModel
-from autogen_core._function_utils import (
-    get_typed_signature,
-)
+# from autogen_core._function_utils import (
+#     get_typed_signature,
+# )
 from autogen_core.code_executor import Import, ImportFromModule
 from autogen_core.code_executor._func_with_reqs import import_to_str, to_code
 from autogen_core.models import LLMMessage
 from ..base import BaseModifier, BaseModifierAgent
 from ..base.types import ModifierFunction
+from ..base._base_modifier import BaseModifierFunction
 
 
 class ModifierConfig(BaseModel):
     """Configuration for a modifier function."""
 
     source_code: str | None = None
+    function: ComponentModel | None = None
     agent: ComponentModel | None = None
     name: str
     global_imports: List[Import]
@@ -32,7 +34,7 @@ class Modifier(BaseModifier, Component[ModifierConfig]):
 
     def __init__(
         self,
-        func: ModifierFunction | None = None,
+        func: ModifierFunction | BaseModifierFunction | None = None,
         agent: BaseModifierAgent | None = None,
         name: str | None = None,
         global_imports: List[Import] = [],
@@ -55,7 +57,6 @@ class Modifier(BaseModifier, Component[ModifierConfig]):
         )
         func_name = ""
         if func is not None:
-            self._signature = get_typed_signature(func)
             func_name = name or func.func.__name__ if isinstance(func, functools.partial) else name or func.__name__
         if agent is not None:
             if not isinstance(agent, BaseModifierAgent):
@@ -71,7 +72,7 @@ class Modifier(BaseModifier, Component[ModifierConfig]):
         if self._func is not None:
             result = self._func(messages, non_modified_messages)
         elif self._agent is not None:
-            result = self._agent.run(task=messages, original_task=non_modified_messages)
+            result = await self._agent.run(task=messages, original_task=non_modified_messages)
         else:
             result = messages
         return result
@@ -80,11 +81,18 @@ class Modifier(BaseModifier, Component[ModifierConfig]):
         if self._func is not None and self._agent is not None:
             raise ValueError("Only one of a function or an agent can be provided.")
         elif self._func is not None:
-            return ModifierConfig(
-                source_code=dedent(to_code(self._func)),
-                global_imports=self._global_imports,
-                name=self.name,
-            )
+            if not isinstance(self._func, BaseModifierFunction):
+                return ModifierConfig(
+                    source_code=dedent(to_code(self._func)),
+                    global_imports=self._global_imports,
+                    name=self.name,
+                )
+            else:
+                return ModifierConfig(
+                    function=self._func.dump_component(),
+                    global_imports=self._global_imports,
+                    name=self.name,
+                )
         elif self._agent is not None:
             return ModifierConfig(
                 agent=self._agent.dump_component(),
@@ -96,6 +104,13 @@ class Modifier(BaseModifier, Component[ModifierConfig]):
 
     @classmethod
     def _from_config(cls, config: ModifierConfig) -> Self:
+        if config.source_code is not None and config.function is not None:
+            raise ValueError("Only one of a function or an agent can be provided.")
+        elif config.source_code is not None and config.agent is not None:
+            raise ValueError("Only one of a function or an agent can be provided.")
+        elif config.function is not None and config.agent is not None:
+            raise ValueError("Only one of a function or an agent can be provided.")
+
         exec_globals: dict[str, Any] = {}
 
         # Execute imports first
@@ -134,7 +149,8 @@ class Modifier(BaseModifier, Component[ModifierConfig]):
                 raise TypeError(f"Expected function but got {type(func)}")
 
             return cls(func=func, name=config.name, global_imports=config.global_imports)
-        if config.agent is not None:
+        elif config.agent is not None:
             return cls(agent=BaseModifierAgent.load_component(config.agent), name=config.name, global_imports=config.global_imports)
-        
+        elif config.function is not None:
+            return cls(func=BaseModifierFunction.load_component(config.function), name=config.name, global_imports=config.global_imports)
         raise ValueError("Either a function or an agent must be provided.")

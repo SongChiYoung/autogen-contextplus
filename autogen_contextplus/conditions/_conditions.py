@@ -74,7 +74,7 @@ class MaxMessageCondition(ContextPlusCondition, Component[MaxMessageConditionCon
     async def __call__(self, messages: Sequence[ContextMessage]) -> TriggerMessage | None:
         if self.triggered:
             raise ContextPlusException("Trigger condition has already been reached")
-        self._message_count += len([m for m in messages if isinstance(m, BaseContextMessageTypes)])
+        self._message_count = len([m for m in messages if isinstance(m, BaseContextMessageTypes)])
         if self._message_count >= self._max_messages:
             return TriggerMessage(
                 content=f"Maximum number of messages {self._max_messages} reached, current message count: {self._message_count}",
