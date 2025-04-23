@@ -6,7 +6,7 @@ from typing_extensions import Self
 from autogen_core import ComponentModel, Component
 from autogen_core.models import LLMMessage
 from autogen_core.model_context import ChatCompletionContext
-from ..base import ContextPlusCondition
+from ..base import ContextPlusCondition, BaseModifierAgent
 from ..base.types import ModifierFunction
 from ..modifier import Modifier
 
@@ -75,7 +75,7 @@ class ContextPlusChatCompletionContext(ChatCompletionContext, Component[ContextP
 
     def __init__(
         self,
-        modifier_func: ModifierFunction | Modifier,
+        modifier_func: ModifierFunction | Modifier | BaseModifierAgent,
         modifier_condition: ContextPlusCondition,
         initial_messages: List[LLMMessage] | None = None,
         non_modified_messages: List[LLMMessage] | None = None,
@@ -88,12 +88,14 @@ class ContextPlusChatCompletionContext(ChatCompletionContext, Component[ContextP
 
         self._non_modified_messages.extend(self._messages)
 
-        self._modifier_func: Modifier
+        self._modifier_func: Modifier | BaseModifierAgent
         if isinstance(modifier_func, Modifier):
             # If the summarizing function is a tool, use it directly.
             self._modifier_func = modifier_func
         elif callable(modifier_func):
             self._modifier_func = Modifier(func=modifier_func)
+        elif isinstance(modifier_func, BaseModifierAgent):
+            self._modifier_func = Modifier(agent=modifier_func)
         else:
             raise ValueError("modifier_func must be a callable or a Modifier.")
         self._modifier_condition = modifier_condition

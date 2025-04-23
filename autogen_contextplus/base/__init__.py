@@ -7,6 +7,7 @@ from ._base_condition import (
 
 from ._base_modifier import (
     BaseModifier,
+    BaseModifierFunction,
 )
 
 from ._base_modifier_agent import (
@@ -20,5 +21,6 @@ __all__ = [
     "AndContextPlusCondition",
     "OrContextPlusCondition",
     "BaseModifier",
+    "BaseModifierFunction",
     "BaseModifierAgent",
 ]
