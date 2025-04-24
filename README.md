@@ -2,11 +2,19 @@
 [![GitHub stars](https://img.shields.io/github/stars/SongChiYoung/autogen-contextplus?style=social)](https://github.com/SongChiYoung/autogen-contextplus/stargazers)
 [![Downloads](https://static.pepy.tech/personalized-badge/autogen-contextplus?period=week&units=international_system&left_color=gray&right_color=orange&left_text=Downloads/week)](https://pepy.tech/project/autogen-contextplus)
 
-> Modular, customizable, and serializable context engine for [AutoGen](https://github.com/microsoft/autogen) — enabling structured message summarization, filtering, and rewriting logic with full compatibility.
+Modular, customizable, and serializable context engine for [AutoGen](https://github.com/microsoft/autogen) — enabling structured message summarization, filtering, and rewriting logic with full compatibility.
 
 
 🚀 **Try it? → Don’t forget to ⭐ the repo if useful!**
 
+> A **plugin extension** for AutoGen to enable **custom context control** in multi-agent LLM workflows.
+> 
+> 🔍 **Looking for**:
+> - How to **limit history** in AutoGen agents?
+> - Add **summarization hooks** to AutoGen?
+> - Customize **context length** for LLM messages?
+> 
+> **autogen-contextplus** is your answer.
 
 ---
 
