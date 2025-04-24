@@ -25,7 +25,7 @@ Modular, customizable, and serializable context engine for [AutoGen](https://git
 - ✅ Condition-triggered message summarization
 - ✅ Agent- or function-based message rewriting
 - ✅ Component-based serialization / deserialization
-- ✅ Full support for user-defined logic via AutoGen `FunctionTool` or custom agents
+- ✅ Full support for user-defined logic via Function or custom agents (contextplus exclusive)
 
 ---
 
