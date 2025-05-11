@@ -106,7 +106,7 @@ ignore = ["F401", "E501"]
 check = { sequence = ["pyright", "mypy", "test"], help = "Run pyright then pytest" }
 pyright = { shell = "pyright" }
 mypy = { shell = "mypy autogen_contextplus tests examples", help = "Run mypy type checks" }
-test = { shell = "pytest" }
+test = { shell = "pytest --cov=. --cov-report=html" }
 
 [tool.poe]
 envfile = ".env"
