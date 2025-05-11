@@ -134,3 +134,9 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 ```
+
+---
+
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=SongChiYoung/autogen-contextplus&type=Date)](https://www.star-history.com/#SongChiYoung/autogen-contextplus&Date)
