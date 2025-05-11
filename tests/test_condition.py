@@ -16,7 +16,7 @@ from autogen_contextplus.conditions import (
 from autogen_contextplus.base import ContextPlusException
 from autogen_contextplus.base.types import TriggerMessage
 from autogen_core.models import AssistantMessage, FunctionExecutionResult, FunctionExecutionResultMessage, UserMessage
-from autogen_ext.models.openai import OpenAIChatCompletionClient
+from autogen_ext.models.replay import ReplayChatCompletionClient
 
 
 # Test TriggerMessageCondition
@@ -181,7 +181,7 @@ def test_timeout_reset(timeout_condition: Any) -> None:
 @pytest.fixture
 def token_usage_condition() -> Generator[Any, Any, Any]:
     condition = TokenUsageCondition(
-        model_client=OpenAIChatCompletionClient(model="gpt-4o"),
+        model_client=ReplayChatCompletionClient(chat_completions=[]),
         token_limit=50,
     )
     yield condition
@@ -194,7 +194,10 @@ def test_token_usage_initial_state(token_usage_condition: Any) -> None:
 
 def test_token_usage_trigger_when_max_tokens_exceeded(token_usage_condition: Any) -> None:
     message = AssistantMessage(
-        content="1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25",  # Over than 50 tokens
+        content=(
+            "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 "
+            "1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 "
+        ), # Over than 50 tokens
         source="test",
     )
     result = asyncio.run(token_usage_condition([message]))
