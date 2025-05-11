@@ -8,10 +8,6 @@ jobs:
     name: Run tests and collect coverage
     runs-on: ubuntu-latest
     steps:
-      - name: Install dependencies
-        run: |
-          pip install '.[dev]'
-          
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -21,7 +17,8 @@ jobs:
         uses: actions/setup-python@v4
 
       - name: Install dependencies
-        run: pip install pytest pytest-cov
+        run: |
+          pip install '.[dev]'
 
       - name: Run tests
         run: pytest --cov --cov-branch --cov-report=xml
